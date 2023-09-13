@@ -15,14 +15,13 @@ exports.CreateMessage = async (req, res) => {
         const data = {
             answer: req.body.answer,
             question: req.body.question,
-            option: req.body.option, // No need to stringify for MongoDB
+            option: req.body.option,
         };
-
         const message = new Message(data);
         const result = await message.save();
 
         if (result._id) {
-            res.send({ MSG: "Create Message Successfully", Data: result._id });
+            res.send({ MSG: "Create Message Successfully", Data: result });
         } else {
             res.send({ MSG: "Not Create Message Successfully" });
         }
@@ -39,7 +38,6 @@ exports.UpdateMessage = async (req, res) => {
             question: req.body.question,
             option: req.body.option,
         };
-
         const updatedMessage = await Message.findByIdAndUpdate(messageId, updatedData, {
             new: true,
         });
@@ -74,24 +72,17 @@ exports.UpdateOption = async (req, res) => {
     }
 };
 
-
-
 exports.DeleteOption = async (req, res) => {
     try {
         const messageId = req.params.id;
         const optionIdToDelete = req.body.option_id;
-
         const message = await Message.findById(messageId);
-
         if (!message) {
             return res.status(404).json({ error: 'Message not found' });
         }
-
         const updatedOptions = message.option.filter((opt) => opt._id.toString() !== optionIdToDelete.toString());
         message.option = updatedOptions;
-
         const updatedMessage = await message.save();
-
         res.send({ MSG: "Option Deleted Successfully", Data: updatedMessage });
     } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
@@ -101,13 +92,10 @@ exports.DeleteOption = async (req, res) => {
 exports.DeleteMessage = async (req, res) => {
     try {
         const messageId = req.params.id;
-
         const deletedMessage = await Message.findByIdAndDelete(messageId);
-
         if (!deletedMessage) {
             return res.status(404).json({ error: 'Message not found' });
         }
-
         res.send({ MSG: "Message Deleted Successfully", Data: deletedMessage });
     } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
