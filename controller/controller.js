@@ -11,7 +11,7 @@ exports.WellMessage = async (req, res) => {
 
 
 exports.CreateMessage = async (req, res) => {
-    // try {
+    try {
         const data = {
             answer: req.body.answer,
             question: req.body.question,
@@ -26,10 +26,93 @@ exports.CreateMessage = async (req, res) => {
         } else {
             res.send({ MSG: "Not Create Message Successfully" });
         }
-    // } catch (error) {
-    //     res.status(500).json({ error: 'An error occurred' });
-    // }
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
 }
+
+exports.UpdateMessage = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+        const updatedData = {
+            answer: req.body.answer,
+            question: req.body.question,
+            option: req.body.option,
+        };
+
+        const updatedMessage = await Message.findByIdAndUpdate(messageId, updatedData, {
+            new: true,
+        });
+        if (updatedMessage) {
+            res.send({ MSG: "Update Message Successfully", Data: updatedMessage });
+        } else {
+            res.status(404).json({ error: 'Message not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};
+
+exports.UpdateOption = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+        const optionIdToUpdate = req.body.option_id;
+        const updatedOption = req.body.updated_option;
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        const optionIndex = message.option.findIndex((opt) => opt._id.toString() === optionIdToUpdate.toString());
+        if (optionIndex === -1) {
+            return res.status(404).json({ error: 'Option not found' });
+        }
+        message.option[optionIndex] = updatedOption;
+        const updatedMessage = await message.save();
+        res.send({ MSG: "Option Updated Successfully", Data: updatedMessage });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};
+
+
+
+exports.DeleteOption = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+        const optionIdToDelete = req.body.option_id;
+
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        const updatedOptions = message.option.filter((opt) => opt._id.toString() !== optionIdToDelete.toString());
+        message.option = updatedOptions;
+
+        const updatedMessage = await message.save();
+
+        res.send({ MSG: "Option Deleted Successfully", Data: updatedMessage });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};
+
+exports.DeleteMessage = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+
+        const deletedMessage = await Message.findByIdAndDelete(messageId);
+
+        if (!deletedMessage) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        res.send({ MSG: "Message Deleted Successfully", Data: deletedMessage });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};
 
 exports.GetBotMessage = async (req, res) => {
     try {
@@ -53,7 +136,6 @@ async function generateBotResponse(userMessage, option) {
 
         if (message) {
             const matchingOption = findMatchingOption(message.option, option);
-
             if (matchingOption) {
                 return {
                     answer: matchingOption,
